@@ -47,7 +47,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -out=plan.tfplan
+        run: terraform plan -input=false -var="project_id=${{ secrets.GOOGLE_PROJECT_ID }}" -out=plan.tfplan
 
       - name: Upload plan to GCS
         run: |
@@ -118,7 +118,7 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
 
       - name: Install Terraform 1.13.1
         run: |
@@ -132,7 +132,7 @@ jobs:
         run: terraform init -input=false
 
       - name: Create Destroy Plan
-        run: terraform plan -destroy -input=false -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -out=destroy.tfplan
+        run: terraform plan -destroy -input=false -var="project_id=${{ secrets.GOOGLE_PROJECT_ID }}" -out=destroy.tfplan
 
       - name: Upload Destroy Plan
         run: |
@@ -158,7 +158,7 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ secrets.GOOGLE_PROJECT_ID }}
 
       - name: Install Terraform 1.13.1
         run: |
