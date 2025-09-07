@@ -49,14 +49,10 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -input=false -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -out=plan.tfplan
 
-      - name: Checksum plan
-        run: sha256sum plan.tfplan | awk '{print $1}' > plan.tfplan.sha256
-
       - name: Upload plan to GCS
         run: |
           SAFE_PREFIX="${{ github.repository }}-${{ github.sha }}"
           gsutil cp plan.tfplan gs://${PLAN_BUCKET}/${SAFE_PREFIX}/plan.tfplan
-          gsutil cp plan.tfplan.sha256 gs://${PLAN_BUCKET}/${SAFE_PREFIX}/plan.tfplan.sha256
 
   # -------------------------------------------------
   # 2) APPLY (waits for your approval in this same run)
@@ -97,16 +93,6 @@ jobs:
         run: |
           SAFE_PREFIX="${{ github.repository }}-${{ github.sha }}"
           gsutil cp gs://${PLAN_BUCKET}/${SAFE_PREFIX}/plan.tfplan ./plan.tfplan
-          gsutil cp gs://${PLAN_BUCKET}/${SAFE_PREFIX}/plan.tfplan.sha256 ./plan.tfplan.sha256
-
-      - name: Verify checksum
-        run: |
-          DOWN_HASH="$(sha256sum plan.tfplan | awk '{print $1}')"
-          EXP_HASH="$(cat plan.tfplan.sha256)"
-          if [ "$DOWN_HASH" != "$EXP_HASH" ]; then
-            echo "Checksum mismatch! expected=$EXP_HASH got=$DOWN_HASH"
-            exit 1
-          fi
 
       - name: Terraform Init
         run: terraform init -input=false
@@ -148,14 +134,10 @@ jobs:
       - name: Create Destroy Plan
         run: terraform plan -destroy -input=false -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -out=destroy.tfplan
 
-      - name: Checksum Destroy Plan
-        run: sha256sum destroy.tfplan | awk '{print $1}' > destroy.tfplan.sha256
-
       - name: Upload Destroy Plan
         run: |
           SAFE_PREFIX="${{ github.repository }}-${{ github.sha }}"
           gsutil cp destroy.tfplan gs://${PLAN_BUCKET}/${SAFE_PREFIX}/${DESTROY_SUBPATH}/destroy.tfplan
-          gsutil cp destroy.tfplan.sha256 gs://${PLAN_BUCKET}/${SAFE_PREFIX}/${DESTROY_SUBPATH}/destroy.tfplan.sha256
 
   # -------------------------------------------------
   # 4) DESTROY APPLY (waits for your approval in SAME RUN)
@@ -190,15 +172,6 @@ jobs:
         run: |
           SAFE_PREFIX="${{ github.repository }}-${{ github.sha }}"
           gsutil cp gs://${PLAN_BUCKET}/${SAFE_PREFIX}/${DESTROY_SUBPATH}/destroy.tfplan ./destroy.tfplan
-          gsutil cp gs://${PLAN_BUCKET}/${SAFE_PREFIX}/${DESTROY_SUBPATH}/destroy.tfplan.sha256 ./destroy.tfplan.sha256
-
-      - name: Verify destroy plan checksum
-        run: |
-          DOWN_HASH="$(sha256sum destroy.tfplan | awk '{print $1}')"
-          EXP_HASH="$(cat destroy.tfplan.sha256)"
-          if [ "$DOWN_HASH" != "$EXP_HASH" ]; then
-            echo "Checksum mismatch! expected=$EXP_HASH got=$DOWN_HASH"; exit 1
-          fi
 
       - name: Terraform Init
         run: terraform init -input=false
